@@ -122,3 +122,45 @@ class HuffmanEncoder:
 
         print("Compressed the given file")
         return output_path
+
+    def remove_padding(self, text):
+        padding_info = text[:8]
+        padding = int(padding_info, 2)
+
+        text = text[8:]
+        encoded_text = text[: -1 * padding]
+
+        return encoded_text
+
+    def decode_text(self, encoded_text):
+        code = ""
+        decoded_text = ""
+
+        for bit in encoded_text:
+            code += bit
+            if code in self.reverse_map:
+                character = self.reverse_map[code]
+                decoded_text += character
+                code = ""
+
+        return decoded_text
+
+    def decompress(self, input_path):
+        filename, file_extension = os.path.splitext(self.path)
+        output_path = filename + "_decompressed" + ".txt"
+
+        with open(input_path, "rb") as file, open(output_path, "w") as output:
+            bit_string = ""
+            byte = file.read(1)
+            while len(byte) > 0:
+                byte = ord(byte)
+                bits = bin(byte)[2:].rjust(8, "0")
+                bit_string += bits
+                byte = file.read(1)
+
+            encoded_text = self.remove_padding(bit_string)
+            decoded_text = self.decode_text(encoded_text)
+            output.write(decoded_text)
+
+        print("Decompressed the given file")
+        return output_path
