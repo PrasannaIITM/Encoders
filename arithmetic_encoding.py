@@ -1,4 +1,5 @@
 from decimal import Decimal
+from utils import bin2float, float2bin
 
 
 class ArithmeticEncoder:
@@ -67,3 +68,56 @@ class ArithmeticEncoder:
 
         min_val, max_val, encoded_val = self.build_encoded_text(last_stage_probabs)
         return min_val, max_val, encoded_val
+
+    def process_stage_binary(self, stage_min_bin, stage_max_bin):
+        stage_mid_bin = stage_min_bin + "1"
+        stage_min_bin = stage_min_bin + "0"
+
+        stage_probs = {}
+        stage_probs[0] = [stage_min_bin, stage_mid_bin]
+        stage_probs[1] = [stage_mid_bin, stage_max_bin]
+
+        return stage_probs
+
+    def encode_binary(self, min_val, max_val):
+        binary_code = None
+
+        curr_min_bin = "0.0"
+        curr_max_bin = "1.0"
+
+        stage_probabs = {}
+        stage_probabs[0] = [curr_min_bin, "0.1"]
+        stage_probabs[1] = ["0.1", curr_max_bin]
+
+        while True:
+            if max_val < bin2float(stage_probabs[0][1]):
+                # search in first half
+                curr_min_bin = stage_probabs[0][0]
+                curr_max_bin = stage_probabs[0][1]
+            else:
+                # search in second half
+                curr_min_bin = stage_probabs[1][0]
+                curr_max_bin = stage_probabs[1][1]
+
+            if self.save:
+                self.history_binary.append(stage_probabs)
+
+            # update limits by updating mid according to new min, max
+            stage_probabs = self.process_stage_binary(curr_min_bin, curr_max_bin)
+
+            # The binary code is found.
+            if (bin2float(stage_probabs[0][0]) >= min_val) and (
+                bin2float(stage_probabs[0][1]) < max_val
+            ):
+                binary_code = stage_probabs[0][0]
+                break
+            elif (bin2float(stage_probabs[1][0]) >= min_val) and (
+                bin2float(stage_probabs[1][1]) < max_val
+            ):
+                binary_code = stage_probabs[1][0]
+                break
+
+        if self.save:
+            self.history_binary.append(stage_probabs)
+
+        return binary_code
